@@ -22,7 +22,13 @@ allprojects {
 }
 
 apply plugin: "com.android.library"
-apply plugin: "kotlin-android"
+def agpMajor = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION.tokenize('.')[0] as int
+// AGP 9+ compiles Kotlin itself unless the app opts out with android.builtInKotlin=false.
+def builtInKotlin = agpMajor >= 9 &&
+        providers.gradleProperty("android.builtInKotlin").map { it.toBoolean() }.getOrElse(true)
+if (!builtInKotlin) {
+    apply plugin: "kotlin-android"
+}
 def safeExtGet(prop, fallback) {
     rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
 }
@@ -38,9 +44,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11
-    }
 
     sourceSets {
         main.java.srcDirs += "src/main/kotlin"
@@ -66,5 +69,11 @@ android {
                showStandardStreams = true
             }
         }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
     }
 }
